@@ -1,0 +1,134 @@
+This tutorial about the data aggregation. 
+
+
+Aggregation operations process data records and return computed results. 
+Aggregation operations group values from multiple documents together, and can perform a variety of operations on the grouped data to return a single result.
+
+There are three types of aggregation 
+
+aggregation pipeline, 
+the map-reduce function
+single purpose aggregation methods.
+
+1. lets insert the data first. lets call this aggregateproduct
+
+db.aggregateproduct.insertMany( [
+   { product: "register", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 50, size: { height: 8.5, weight: 11, unit: "in" }, status: "A" },
+   { product: "sheet", quantity: 100, size: { height: 8.5, weight: 11, unit: "in" }, status: "D" },
+   { product: "timetable", quantity: 75, size: { height: 22.85, weight: 30, unit: "cm" }, status: "D" },
+   { product: "envelop", quantity: 45, size: { height: 10, weight: 15.25, unit: "cm" }, status: "A" },
+   { product: "register", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 50, size: { height: 8.5, weight: 11, unit: "in" }, status: "A" },
+   { product: "sheet", quantity: 100, size: { height: 8.5, weight: 11, unit: "in" }, status: "D" },
+   { product: "timetable", quantity: 75, size: { height: 22.85, weight: 30, unit: "cm" }, status: "D" },
+   { product: "envelop", quantity: 45, size: { height: 10, weight: 15.25, unit: "cm" }, status: "A" },
+   { product: "register", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 50, size: { height: 8.5, weight: 11, unit: "in" }, status: "A" }
+]);
+
+2 lets query the data based aggregate pipelining
+
+db.aggregateproduct.aggregate([
+   { $match: { status: "A" } },
+   { $group: { _id: "$product", total: { $sum: "$quantity" } } }
+])
+
+First Stage: The $match stage filters the documents by the status field and passes to the next stage those documents that have status equal to "A".
+
+Second Stage: The $group stage groups the documents by the product field to calculate the sum of the quantity for each unique product.
+
+3. we can add sort to pipe line as well. 
+
+db.aggregateproduct.aggregate([
+   { $match: { status: "A" } },
+   { $group: { _id: "$product", total: { $sum: "$quantity" } } },
+   {$sort : { total : 1 }
+   }
+])
+
+4. we can apply other aggregation properties along with match $project or $unset or $addFields or $set. lets see sum queries.
+
+db.aggregateproduct.aggregate([
+   { $match: { status: "A" } },
+   { $addFields: {
+    maxWeight: { $max: "$size.weight" },
+    minSizeHeight: { $min: "$size.height" }
+	} }
+])
+db.aggregateproduct.aggregate([
+   { $match: { status: "A" } },
+   { $addFields: {
+    maxQ: { $max: "$quantity" },
+    minSizeHeight: { $min: "$size.height" }
+	} }
+])
+
+
+5. 
+
+db.aggregateproduct.aggregate([
+   { $project : { product : 1,quantity : 1 } } ,
+   { $group: { _id: "$product", total: { $sum: "$quantity" } } },
+   {$sort : { total : 1 }
+   }
+])
+
+6. actually aggreation has so many stages that we can not go through all as you can see in below link.
+
+https://docs.mongodb.com/manual/reference/operator/aggregation/project/#pipe._S_project
+
+7. lets look at mapreduce , no it is not hadooops map reduce :) but exactly same concept. 
+Map-reduce is a data processing paradigm for condensing large volumes of data into useful aggregated results. 
+For map-reduce operations, MongoDB provides the mapReduce database command.
+
+db.collection.mapReduce(
+mapfunction() # this give document with key value pairs
+reducefunction() # reduces earlier key and value pair to single key and single value pair.
+
+{
+query # this is basically same query as we throw it in the find function.
+output # end result the way we want to print
+
+})
+
+lets see an example 
+
+db.aggregateproduct.mapReduce(
+function() {
+ emit(this.product,1); 
+ },
+ function(key, values) {
+ return Array.sum(values);
+ }, 
+{
+	query:{status:"A"},
+	out: { merge: "map_reduce_result" },
+}
+)
+db.map_reduce_result.find();
+
+8. The aggregation pipeline provides an alternative to map-reduce and may be the preferred solution for aggregation tasks where the complexity of map-reduce may be unwarranted.
+
+9. Pipeline stages have a limit of 100 megabytes of RAM. If a stage exceeds this limit, MongoDB will produce an error. 
+To allow for the handling of large datasets, use the allowDiskUse option to enable aggregation pipeline stages to write data to temporary files.
+
+10. single command  aggration 
+
+db.aggregateproduct.count() 
+
+11. 
+
+db.aggregateproduct.estimatedDocumentCount() 
+
+12
+
+db.aggregateproduct.distinct("status") 
+
+db.aggregateproduct.distinct("product") 
+
+
+
+
+
+ 

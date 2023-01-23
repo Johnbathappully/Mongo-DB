@@ -1,0 +1,164 @@
+This document provides step by step way to learn about querying the data
+
+1.	Let insert the data in 
+
+db.plist.insertMany( [
+   { product: "register", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 50, size: { height: 8.5, weight: 11, unit: "in" }, status: "A" },
+   { product: "sheet", quantity: 100, size: { height: 8.5, weight: 11, unit: "in" }, status: "D" },
+   { product: "timetable", quantity: 75, size: { height: 22.85, weight: 30, unit: "cm" }, status: "D" },
+   { product: "envelop", quantity: 45, size: { height: 10, weight: 15.25, unit: "cm" }, status: "A" }
+]);
+
+Above data of products inserted 
+ 
+
+2.	We can start quering based on main field.
+db.plist.find( { product: "sheet"} )
+
+3.	We can find prod based on the input embeded Doc of size 
+db.plist.find( { size: { height: 14, weight: 21, unit: "cm" } } )
+
+but we have to provide exact array.
+db.plist.find(  { size: { weight: 21, height: 14, unit: "cm" } }  ) this will not work 
+
+4.	To query based on the values in side embeded doc we have provide input as given below.
+db.plist.find( { "size.unit": "in" } )
+
+5.	We can query based on comparing numbers. 
+db.plist.find( { "size.height": { $lt: 15 } } )
+
+db.plist.find( { "size.weight": { $gt: 20 } } )
+above all queries was related to document which has embedded document but we may array also as a value. 
+
+6.	Lets add more data to our current collection inventory
+
+db.plist.insertMany([
+   { product: "register", quantity: 25, tags: ["blank", "red"], dim_cm: [ 14, 21 ] },
+   { product: "book", quantity: 50, tags: ["red", "blank"], dim_cm: [ 14, 21 ] },
+   { product: "sheet", quantity: 100, tags: ["red", "blank", "plain"], dim_cm: [ 14, 21 ] },
+   { product: "timetable", quantity: 75, tags: ["blank", "red"], dim_cm: [ 22.85, 30 ] },
+   { product: "envelop", quantity: 45, tags: ["blue"], dim_cm: [ 10, 15.25 ] }
+]);
+
+In this we can see tags and dim_cm are array of elements. 
+
+7.	We can query using the array directly
+db.plist.find( { tags: ["red", "blank"] } )
+
+
+8.	If we want all the documents which might contain both of the element below and may be more
+db.plist.find( { tags: { $all: ["red", "blank"] } } )
+
+9.	If we want to find all the documents where array element is present.
+db.plist.find( { tags: "red" } )
+
+10.	Similarly if elements in the array are number we can use comparators
+db.plist.find( { dim_cm: { $gt: 25 } } ) 
+
+11.	we can search in a given multiple conditions. This will give the union of element which greater then 15 or less then 20.
+db.plist.find( { dim_cm: { $gt: 15, $lt: 20 } } )
+
+
+12.	we want to find element which matches all the condition then we have to search as given below
+db.plist.find( { dim_cm: { $elemMatch: { $gt: 22, $lt: 30 } } } )
+
+
+13.	we can query data based on the index of element in the array.
+db.plist.find( { "dim_cm.1": { $gt: 25 } } )
+
+14.	we can also query with length of the array and all similar length result will come.
+db.plist.find( { "tags": { $size: 3 } } )
+
+
+15.	let insert more data this time. We will be inserting data with arrays of embedded documents.
+db.plist.insertMany( [
+   { product: "register", instock: [ { warehouse: "A", quantity: 5 }, { warehouse: "C", quantity: 15 } ] },
+   { product: "book", instock: [ { warehouse: "C", quantity: 5 } ] },
+   { product: "sheet", instock: [ { warehouse: "A", quantity: 60 }, { warehouse: "B", quantity: 15 } ] },
+   { product: "timetable", instock: [ { warehouse: "A", quantity: 40 }, { warehouse: "B", quantity: 5 } ] },
+   { product: "envelop", instock: [ { warehouse: "B", quantity: 15 }, { warehouse: "C", quantity: 35 } ] }
+]); 
+
+16.	we can query based on the embedded document in array.
+db.plist.find( { "instock": { warehouse: "A", quantity: 5 } } )
+
+btw document needs to be match exactly. 
+
+17.	Single element in the document can also be used to filter the result. It will give as all the inventories where at least one emabedded quantity field is less then equal to 20.
+db.plist.find( { 'instock.quantity': { $lte: 20 } } )
+
+18.	All the documents where first element of array embedded document’s quantity field is less then equal to 
+db.plist.find( { 'instock.0.quantity': { $lte: 20 } } )
+
+19.	Return all the documents where all the conditions are met.
+db.plist.find( { "instock": { $elemMatch: { quantity: 5, warehouse: "A" } } } )
+
+20.	Return all the documents where at least one embedded document matches below condition
+db.plist.find( { "instock": { $elemMatch: { quantity: { $gt: 10, $lte: 20 } } } } )
+
+21.	Return all the documents where all the quantity matches below condition.
+db.plist.find( { "instock.quantity": { $gt: 10,  $lte: 20 } } )
+
+22.	Returns union of documents where either of the condition in embedded document meets. 
+db.plist.find( { "instock.quantity": 5, "instock.warehouse": "A" } )
+
+23.	We are going to execute queries where we can limit the number of output elements or we can choose which elements we want in return. 
+
+This is always advisable since it reduces the data in network. 
+
+Lets insert more data in the same collection
+
+
+db.plist.insertMany( [
+  { product: "register", status: "A", size: { height: 14, weight: 21, unit: "cm" }, instock: [ { warehouse: "A", quantity: 5 } ] },
+  { product: "book", status: "A",  size: { height: 8.5, weight: 11, unit: "in" }, instock: [ { warehouse: "C", quantity: 5 } ] },
+  { product: "sheet", status: "D", size: { height: 8.5, weight: 11, unit: "in" }, instock: [ { warehouse: "A", quantity: 60 } ] },
+  { product: "timetable", status: "D", size: { height: 22.85, weight: 30, unit: "cm" }, instock: [ { warehouse: "A", quantity: 40 } ] },
+  { product: "envelop", status: "A", size: { height: 10, weight: 15.25, unit: "cm" }, instock: [ { warehouse: "B", quantity: 15 }, { warehouse: "C", quantity: 35 } ] }
+]);
+
+
+24.	We can limit field while returning with additional input
+db.plist.find( { status: "A" }, { product: 1, status: 1 } )
+id field is always added by default. we can remove id field as well.
+
+db.plist.find( { status: "A" }, { product: 1, status: 1, _id: 0 } )
+25.	We can exclude specifi field and get rest
+db.plist.find( { status: "A" }, { status: 0, instock: 0 } )
+
+26.	We can also choose to include specifc fields from the embedded document
+db.plist.find(
+   { status: "A" },
+   { product: 1, status: 1, "size.unit": 1 }
+)
+
+27.	We can also choose specific field to be returned from array.
+db.plist.find( { status: "A" }, { product: 1, status: 1, "instock.quantity": 1 } )
+
+28.	Now lets look at case where field values might be null or field is not present.
+Let insert below data in out collection.
+
+db.plist.insertMany([
+   { _id: 1, product: null },
+   { _id: 2 }
+])
+
+29.	Below query will return both value where field value is null and field is absent.
+db.plist.find( { product: null } )
+
+30.	Below query is specific query to check if corresponding value of field is null. 
+db.plist.find( { product : { $type: 10 } } )
+
+$type value 10 is related bson where number means null. 
+
+31.	Below query will return all the documents where the searched filed does not exist.
+db.plist.find( { product : { $exists: false } } )
+
+
+
+
+ 
+
+
+ 

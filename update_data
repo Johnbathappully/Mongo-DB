@@ -1,0 +1,222 @@
+This document provides step by step way to learn about querying the data
+
+1.	Let insert the data in 
+
+create a new collection called updateplist and insert below data
+
+db.updateplist.insertMany( [
+   { product: "sheet", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" },
+   { product: "diary", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" }
+] );
+
+2. lets check our collection with values
+
+db.updateplist.find()
+
+3. let update document using updateone
+
+db.updateplist.updateOne(
+   { product: "sheet" },
+   {
+     $set: { "size.unit": "cm", status: "P" },
+   }
+)
+
+let view the document, it should reflect new values.
+
+db.updateplist.find({product : "sheet"}).forEach(printjson)
+
+4. we can also update a document with lastmodified date with below command.
+
+db.updateplist.updateOne(
+   { product: "sheet" },
+   {
+     $set: { "size.unit": "in", status: "D" },
+	 $currentDate: { lastModified: true }
+   }
+)
+
+this command will create extra field in the document name currentDate with current date value.
+
+db.updateplist.find({product : "sheet"}).forEach(printjson)
+
+5. let insert duplicate records in terms of product name.
+
+db.updateplist.insertMany( [
+   { product: "sheet", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" },
+   { product: "diary", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" }
+] );
+
+now lets update document with filter sheet but there are 2 such document.
+
+db.updateplist.updateOne(
+   { product: "sheet" },
+   {
+     $set: { product: "sheet1", "size.unit": "cm", status: "P" },
+   }
+)
+
+let see the records now.
+ 
+db.updateplist.find()
+
+This way we can tell the if 2 or more matching records are getting updated then record that is ordered first gets updated only.
+
+6. let insert more data.
+
+db.updateplist.insertMany( [
+   { product: "sheet1", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" },
+   { product: "diary", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" }
+] );
+
+
+this way have more then 1 sheet product in out collections. now let try updating multiple documents using updateMany command.
+
+db.updateplist.find()
+
+db.updateplist.updateMany(
+   { product: "sheet1" },
+   {
+     $set: { product: "sheet", "size.unit": "cm", status: "P" },
+	 $currentDate: { lastModified: true }
+   }
+)
+
+db.updateplist.find()
+
+7. let apply updateMany to embadded document. 
+
+db.updateplist.updateMany(
+   { "quantity": { $lt: 50 } },
+   {
+     $set: { "size.unit": "in", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+);
+
+db.updateplist.find()
+
+8. let looks at one more important update command replaceOne
+
+db.updateplist.replaceOne(
+   { product: "sheet" },
+   { product: "sheet1", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" }
+);
+
+db.updateplist.replaceOne(
+   { product: "sheet" },
+   { product: "replacedsheet", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" }
+);
+
+db.updateplist.find()
+
+9. There is concept of writeconcern where we can decide what kind of acknowladgement we want from MongoDB server when writing data. 
+This is handled at transaction level so for now we skip this topic.
+
+10.  
+
+db.updateplist.update(
+   { product: "sheet1" },
+   { product: "sheet", quantity: 100, size: { height: 28, weight: 35.5, unit: "cm" }, status: "A" },
+    {
+     multi: true
+
+   }
+);
+
+This will result in error "errmsg" : "multi update is not supported for replacement-style update".
+
+11. now we are going to look at specific type of update queries
+
+lets insert more data in our collection
+
+db.updateplist.insertMany( [
+   { product: "notebook", quantity: 300, size: { height: 32, weight: 40.1, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 55, size: { height: 16, weight: 27, unit: "cm" }, status: "P" },
+   { product: "timetable", quantity: 70, size: { height: 17, weight: 32, unit: "cm" }, status: "P" },
+   { product: "atlas", quantity: 15, size: { height: 20, weight: 36, unit: "cm" }, status: "A" },
+   { product: "drawingbook", quantity: 60, size: { height: 23, weight: 51, unit: "cm" }, status: "P" },
+   { product: "drawingbook", quantity: 62, size: { height: 23, weight: 54, unit: "cm" }, status: "A" },
+   { product: "drawingbook", quantity: 68, size: { height: 23, weight: 54, unit: "cm" }, status: "P" },
+   { product: "drawingbook", quantity: 80, size: { height: 24, weight: 58, unit: "cm" }, status: "A" }
+] );
+
+
+
+db.collection.findOneAndUpdate(
+   <filter>,
+   <update document or aggregation pipeline>, // Changed in MongoDB 4.2
+   {
+     projection: <document>,
+     sort: <document>,
+     maxTimeMS: <number>,
+     upsert: <boolean>,
+     returnNewDocument: <boolean>
+   }
+)
+
+above query make sure it first the document and then update with update document. 
+
+db.updateplist.findOneAndReplace(
+   { product: "atlas" },
+   { product: "atlas", quantity: 73, size: { height: 21, weight: 34, unit: "cm" }, status: "A" }
+)
+
+12. let include various options. first option that we are going is is sort
+
+db.updateplist.findOneAndReplace(
+   { product: "drawingbook", "quantity" : { $lt : 80 } },
+   { product: "drawingbook", quantity: 73, size: { height: 21, weight: 34, unit: "cm" }, status: "A" },
+   { sort: { quantity : 1 } }
+);
+
+in this query result set of find would get sorted in ascending order and first element will get replaced with given document in the query.
+
+13. in this query in are going to project the fields which we want to return along with order.
+we are going to add sort and projection.
+
+db.updateplist.findOneAndReplace(
+   { product: "drawingbook", "quantity" : { $lt : 80 } },
+   { product: "drawingbook", quantity: 73, size: { height: 21, weight: 34, unit: "cm" }, status: "A" },
+   { sort: { quantity : 1 }, projection: { product : 1, quantity : 1, "size.height" : 1  } }
+);
+
+14. we going to add sort, projection as well maxTime
+
+db.updateplist.findOneAndReplace(
+   { product: "drawingbook", "quantity" : { $lt : 80 } },
+   { product: "drawingbook", quantity: 73, size: { height: 21, weight: 34, unit: "cm" }, status: "A" },
+   { sort: { quantity : 1 }, projection: { _id : 0, product : 1, quantity : 1, "size.height" : 1  }, maxTimeMS: 1 }
+);
+
+this query would add maximum timeout while executing the queries if time is more then it throws exception.
+This option is more utilized during access via applications or programs.
+
+15. we going to add sort, projection , maxTime and retrunNewDocument 
+
+db.updateplist.findOneAndReplace(
+   { product: "drawingbook", "quantity" : { $lt : 80 } },
+   { product: "drawingbook", quantity: 77, size: { height: 21, weight: 34, unit: "cm" }, status: "A" },
+   { sort: { quantity : 1 }, projection: { _id : 0, product : 1, quantity : 1, "size.height" : 1  }, maxTimeMS: 1 , returnNewDocument: true }
+)
+
+this query is going to return the newdocument on insertion replaced with ascend sort with specific fields provided in the projecting with timeout execution time as 1 milisecond.
+
+16. we going to add sort, projection , maxTime and retrunNewDocument  with upsert property true. upsert is going to insert the document is no such document found in the filter 
+condition.
+
+db.updateplist.findOneAndReplace(
+   { product: "drawingbook", "quantity" : { $lt : 65 } },
+   { product: "drawingbook", quantity: 35, size: { height: 21, weight: 34, unit: "cm" }, status: "A" },
+   { sort: { "quantity" : 1 }, projection: { "_id" : 0, "product" : 1,"quantity" : 1, "size.height" : 1  }, maxTimeMS: 5 , returnNewDocument: true, upsert : true }
+);
+
+that newly inserted document is going to return in the query.
+
+
+
+
+
+ 
+
+

@@ -1,0 +1,86 @@
+mongod --dbpath c:\data\data1\ --port 27017 --replSet rs0 --oplogSize 128 --logpath c:\data\log\mongo1.log
+mongod --dbpath c:\data\data2\ --port 27018 --replSet rs0 --oplogSize 128 --logpath c:\data\log\mongo2.log
+mongod --dbpath c:\data\data3\ --port 27019 --replSet rs0 --oplogSize 128 --logpath c:\data\log\mongo3.log
+
+mongo --port 27017
+rs.initiate();
+
+rs.add("localhost:27018");
+rs.add("localhost:27019");
+
+rs.status()
+
+
+mongo --port 27018
+rs.slaveOk()
+rs.secondaryOk();
+
+#To know which one is primary
+rs.isMaster()
+
+#On Primary -  to force re election
+rs.stepDown()
+ 
+ 
+ Delayed replica set---->
+ 
+ cfg = rs.config();
+ cfg.members[1].priority=0
+ cfg.members[1].hidden=true
+ cfg.members[1].slaveDelay= 3600
+  rs.reconfig(cfg)
+  
+  
+  rs.isMaster();
+  rs.printReplicationInfo();
+  rs.printSecondaryReplicationInfo();
+  
+  Configuring default write concern:
+  cfg = cfg = rs.config();
+  cfg.settings = {}	
+  cfg.settings.getLastErrorDefaults = {w:"majority", wtimeout:5000}
+  rs.reconfig(cfg)
+  
+  
+  
+  
+  Sharding
+  =========
+  Config Servers------>
+  mongod --configsvr --dbpath c:\data\configdb1\ --port 27018 --replSet conf --logpath c:\data\log\config1.log
+  mongod --configsvr --dbpath c:\data\configdb2\ --port 27019 --replSet conf --logpath c:\data\log\config2.log
+  
+  mongo --port 27018
+  
+  rs.initiate();
+  rs.add("localhost:27019");
+  
+  mongos --configdb conf/localhost:27018,localhost:27019
+  mongo --port 27017
+  
+  Data Servers------>
+  mongod --dbpath  c:\data\shard1 --port 27021 --replSet shard --shardsvr --logpath c:\data\log\shard1.log
+  mongod --dbpath  c:\data\shard2 --port 27022 --replSet shard --shardsvr --logpath c:\data\log\shard2.log
+  
+  
+  mongo --port 27021
+  rs.initiate();
+  rs.add("localhost:27022");
+  
+  
+  mongos>
+  sh.addShard("shard/localhost:27021")
+  sh.addShard("shard/localhost:27022")
+  
+  sh.status();
+  
+  //enabling sharding on a new db
+  sh.enableSharding("sharddb")
+  
+  //enable sharding on new collection
+  sh.shardCollection("sharddb.sharddata",{_id:1})
+  
+  
+  
+  Node package manager- v8 runtime engine
+  npm install mongodb

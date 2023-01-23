@@ -1,0 +1,102 @@
+This document would help understanding all the command related to deleting the data.
+
+1.	Let insert the data in 
+
+db.deleteplist.insertMany( [
+   { product: "register", quantity: 25, size: { height: 14, weight: 21, unit: "cm" }, status: "A" },
+   { product: "book", quantity: 50, size: { height: 8.5, weight: 11, unit: "in" }, status: "A" },
+   { product: "sheet", quantity: 100, size: { height: 8.5, weight: 11, unit: "in" }, status: "D" },
+   { product: "timetable", quantity: 75, size: { height: 22.85, weight: 30, unit: "cm" }, status: "D" },
+   { product: "envelop", quantity: 45, size: { height: 10, weight: 15.25, unit: "cm" }, status: "A" }
+]);
+
+Above data of products inserted 
+
+2. let delete the data using deleteOne command with simple condition.
+
+db.deleteplist.deleteOne( { product: "sheet"} )
+
+let check if we can find the deleted item.
+
+db.deleteplist.find( { product: "sheet"} )
+
+3. we can also delete a document based on the embedded document.
+
+db.deleteplist.deleteOne( { size: { height: 14, weight: 21, unit: "cm" } } )
+
+lets check if we have any such document.
+db.deleteplist.find( { size: { height: 14, weight: 21, unit: "cm" } } )
+
+so far we have deleted 2 documents from the collection. lets verify that.
+
+db.deleteplist.find()
+
+4. we can also delete document based on the embedded document fields.
+
+db.deleteplist.deleteOne( { "size.unit": "in" } )
+
+5. we can also delete document based on the embedded document fields which can compared such as numbers.
+
+db.deleteplist.deleteOne( { "size.height": { $lt: 15 } } )
+
+6.	Lets add more data to our current collection
+
+db.deleteplist.insertMany([
+   { product: "register", quantity: 25, tags: ["blank", "red"], dim_cm: [ 14, 21 ] },
+   { product: "book", quantity: 50, tags: ["red", "blank"], dim_cm: [ 14, 21 ] },
+   { product: "sheet", quantity: 100, tags: ["red", "blank", "plain"], dim_cm: [ 14, 21 ] },
+   { product: "timetable", quantity: 75, tags: ["blank", "red"], dim_cm: [ 22.85, 30 ] },
+   { product: "envelop", quantity: 45, tags: ["blue"], dim_cm: [ 10, 15.25 ] }
+]);
+
+7. lets apply more complext conditions in deleteOne method. we are passing exact array to delete document which matching the array.
+
+db.deleteplist.deleteOne( { tags: ["red", "blank"] } )
+
+db.deleteplist.deleteMany( { tags: ["red", "blank"] } )
+
+8. we can delete more the one document by passing single element of array in it.
+
+db.deleteplist.deleteMany( { tags: "red" } )
+
+let see how many items are remaining in our collection.
+
+db.deleteplist.find()
+
+9. We will be inserting data with arrays of embedded documents.
+db.deleteplist.insertMany( [
+   { product: "register", instock: [ { warehouse: "A", quantity: 5 }, { warehouse: "C", quantity: 15 } ] },
+   { product: "book", instock: [ { warehouse: "C", quantity: 5 } ] },
+   { product: "sheet", instock: [ { warehouse: "A", quantity: 60 }, { warehouse: "B", quantity: 15 } ] },
+   { product: "timetable", instock: [ { warehouse: "A", quantity: 40 }, { warehouse: "B", quantity: 5 } ] },
+   { product: "envelop", instock: [ { warehouse: "B", quantity: 15 }, { warehouse: "C", quantity: 35 } ] }
+]); 
+
+10. we can simply delete many documents by passing an embedded document.
+
+db.deleteplist.deleteMany( { "instock": { warehouse: "A", quantity: 5 } } )
+
+11. there is one more command for removing the document. 
+
+db.collection.remove() or rather db.deleteplist.remove()
+
+we are not going to learn about it since this method is depricated thus it will removed in higher versions of mongodb. it works as same as deletemany except it return 
+other result.
+
+db.deleteplist.remove({ 'instock.quantity': { $lte: 20 } })
+
+12. lets insert more data in out collection.
+db.deleteplist.insertMany( [
+  { product: "register", status: "A", size: { height: 14, weight: 21, unit: "cm" }, instock: [ { warehouse: "A", quantity: 5 } ] , creationts: ISODate("2015-11-01T12:30:15Z")},
+  { product: "book", status: "A",  size: { height: 8.5, weight: 11, unit: "in" }, instock: [ { warehouse: "C", quantity: 5 } ], creationts: ISODate("2015-11-01T12:30:15Z") },
+  { product: "sheet", status: "D", size: { height: 8.5, weight: 11, unit: "in" }, instock: [ { warehouse: "A", quantity: 60 } ] , creationts: ISODate("2015-11-01T12:30:15Z")},
+  { product: "timetable", status: "D", size: { height: 22.85, weight: 30, unit: "cm" }, instock: [ { warehouse: "A", quantity: 40 } ] , creationts: ISODate("2015-11-01T12:30:15Z")},
+  { product: "envelop", status: "A", size: { height: 10, weight: 15.25, unit: "cm" }, instock: [ { warehouse: "B", quantity: 15 }, { warehouse: "C", quantity: 35 } ], creationts: ISODate("2015-11-01T12:30:15Z") }
+]);
+
+db.deleteplist.deleteMany( { "instock.quantity": 5, "instock.warehouse": "A" , creationts : { $lt: ISODate("2019-11-01T12:30:15Z") } } )
+
+
+
+
+

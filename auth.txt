@@ -1,0 +1,132 @@
+//Security
+----------
+
+//start mongod server
+
+mongod
+----
+
+//use mongo client shell AND  DO NOT USE robo 3T
+
+mongo
+----
+
+//IMP 
+use admin
+---
+
+//displays users
+show users
+-----
+
+//if required to drop users
+db.dropUser("username");
+-----
+
+
+//create user
+db.createUser({ user:"admin1" , pwd: "password" , roles : [{role: "userAdminAnyDatabase", db: "admin"}]});
+------
+
+
+//on server terminal
+//Stop the server 
+//start again with this command  to activate authentication
+
+mongod --port 27017 --auth
+------
+
+
+//Reconnect the client
+
+mongo
+----
+
+use mydb
+----
+
+//unable to display collections. error
+show collections
+
+----
+
+//Fire this. It will give requires authentication not authorized error
+db.coll.insert( { x: "test" } );
+----
+
+use admin
+---
+
+//unable to display collections. error
+show collections
+
+//Fire this. It will give requires authentication not authorized error
+db.coll.insert( { x: "test" } );
+----
+
+//restart client
+/Again run the client from terminal directly with this command
+
+mongo -u  admin1  -p password  --authenticationDatabase  admin
+----
+
+use mydb (or any existing db)
+---
+
+//works we have logged in as valid user that has admin rights on any database
+show collections
+-----
+
+//Fire this. It will give requires authentication not authorized error as we dont have write rights on this DB
+db.coll.insert( { x: "test" } );
+----
+
+Use admin
+---
+
+//works as we have logged in as valid user
+show collections
+
+//Fire this. It will give requires authentication not authorized error as we dont have write rights on this DB
+db.coll.insert( { x: "test" } );
+----
+
+//Works returns 1 indicating this login exists and user is authenticated
+//This command only works if you have logged in as admin user
+db.auth("admin","password");
+----
+
+//create new user with read write rights
+//rem the last readwrite role is provided only for mydb database
+db.createUser({user:"u1",pwd:"password",roles:[{role:"readWrite",db:"mydb"}]});
+-----
+
+//reconnect client
+mongo  -u  u1  -p  password  --authenticationDatabase  admin
+---
+
+use admin
+----
+
+//authenticate. Works
+db.auth("u1","password");
+
+//authenticate. Works when fired from "u" user login also.
+db.auth("admin1","password");
+
+//Works ??
+show collections
+
+//gives ERROR as "u" user only has read write rights on mydb DB
+db.coll.insert( { x: "test" } );
+------
+
+use mydb
+----
+
+//works
+show collections
+----
+
+
+END

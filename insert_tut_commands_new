@@ -1,0 +1,134 @@
+use firstdb
+# this will create db firstdb
+
+#### create collection by 2 ways
+
+db.students.insertOne({name: "kim", age: 12 , standard: "seventh"})
+# This is going to create collection students with one document in it.
+
+db.createCollection("teachers")
+# This is going to create collection teachers specifically
+
+
+db.teachers.insertMany([
+{ 
+name:"roger",
+subject:"maths"
+},
+{ 
+name:"anita",
+subject:"chemistry"
+},
+{ 
+name:"thomas",
+subject:"physics"
+},
+{ 
+name:"tina",
+subject:"maths"
+},
+{ 
+name:"jonty",
+subject:"english"
+}
+]
+)
+# This command will create multiple documents in teachers collection. We are passing an array of json documents.
+
+db.teachers.find()
+#this will show all the documents present in the teachers collection
+
+db.teachers.find().forEach(printjson)
+# This will print result in json format.
+
+db.teachers.find({name : "roger"})
+# this will find the document where name field is "roger"
+
+db.createCollection( "cap1", { capped: true, size: 10000 } )
+#this is going create capped collection of 10000 bytes. Capped collection has to created explicitly
+
+db.cap1.isCapped()
+# command checks if collection is capped.
+
+db.createCollection("cap2", { capped : true, size : 100000, max : 5 } )
+
+db.cap2.insertMany(
+[ 
+{ 
+_id:10,
+name:"neena",
+age:12,
+standard:"fifth"
+},
+{ 
+_id:11 ,
+name:"prince",
+age:7,
+standard:"third"
+},
+{ 
+_id:12, 
+name:"leeta",
+age:8,
+standard:"fourth"
+},
+{ 
+_id:13,  
+name:"jhon",
+age:4,
+standard:"first"
+}
+]
+)
+# this is going to insert 4 entries in our capped collection cap2.
+
+db.cap2.insertMany(
+[ 
+{ 
+_id:14,
+name:"sheena",
+age:16,
+standard:"junior"
+},
+{ 
+_id:15 ,
+name:"kris",
+age:18,
+standard:"senior"
+}
+]
+)
+# This is going to insert 2 entries and since size is capped to 5 entries last entry from collection will get removed.
+
+db.cap2.find()
+# this will show only five entries and _id is removed.
+
+db.createCollection("convertcap1")
+# create non capped collection
+
+db.runCommand({"convertToCapped": "convertcap1",size : 10000})
+#convert a collection to capped one
+
+#Ordered bulk 
+var bulkOrdered = db.bulk1.initializeOrderedBulkOp()
+
+bulkOrdered.insert({_id:1, name:"Murugan"});
+bulkOrdered.insert({_id:2, name:"Niyas"});
+bulkOrdered.insert({_id:3, name:"Nitin"});
+bulkOrdered.insert({_id:1, name:"Murugan"});
+bulkOrdered.insert({_id:4, name:"Adarsh"});
+bulkOrdered.execute();
+
+db.bulk1.find()
+
+#Unordred bulk
+var bulkUnOrdered = db.bulk2.initializeUnorderedBulkOp()
+
+bulkUnOrdered.insert({_id:1, name:"Murugan"});
+bulkUnOrdered.insert({_id:2, name:"Niyas"});
+bulkUnOrdered.insert({_id:3, name:"Nitin"});
+bulkUnOrdered.insert({_id:1, name:"Murugan"});
+bulkUnOrdered.insert({_id:4, name:"Adarsh"});
+bulkUnOrdered.execute();
+
+db.bulk2.find()
